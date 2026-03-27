@@ -1,0 +1,762 @@
+/* ===============================
+   AI EXAM PLANNER - POLISHED LAYER
+   =============================== */
+
+/* ===============================
+   Visual Hierarchy Improvements
+   =============================== */
+#studyplan {
+  display: grid;
+  gap: 24px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+#studyplan h2 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+  letter-spacing: -0.02em;
+}
+
+#studyplan h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  letter-spacing: -0.01em;
+}
+
+/* Enhanced form spacing */
+.planner-manual-entry {
+  margin-top: 20px;
+}
+
+.planner-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.planner-divider::before,
+.planner-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-subtle), transparent);
+}
+
+#studyplan input[type="file"],
+#studyplan input[type="number"],
+#studyplan select {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border-accent);
+  border-radius: 14px;
+  background: var(--surface-card);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-inner);
+}
+
+#studyplan input[type="file"]:focus,
+#studyplan input[type="number"]:focus,
+#studyplan select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light), var(--shadow-inner);
+  background: var(--text-inverse);
+}
+
+#examSubjectsPreview,
+#generatedPlanOutput {
+  display: grid;
+  gap: 14px;
+}
+
+/* ===============================
+   Manual Entry Form
+   =============================== */
+.planner-manual-entry {
+  margin-top: 16px;
+}
+
+.planner-manual-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.planner-manual-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.planner-manual-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.planner-manual-field input {
+  padding: 14px 16px;
+  border: 1.5px solid var(--border-accent);
+  border-radius: 14px;
+  background: var(--surface-card);
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-inner);
+}
+
+.planner-manual-field input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-light), var(--shadow-inner);
+  background: var(--text-inverse);
+}
+
+.planner-add-btn {
+  padding: 14px 24px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  color: var(--text-inverse);
+  border: 1px solid var(--accent);
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+  min-height: 50px;
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.planner-add-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.planner-add-btn:hover::before {
+  left: 100%;
+}
+
+.planner-add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-color: var(--accent-dark);
+}
+
+.planner-add-btn:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ===============================
+   Divider
+   =============================== */
+.planner-divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 20px 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.planner-divider::before,
+.planner-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-subtle);
+}
+
+/* ===============================
+   Upload Row
+   =============================== */
+.planner-upload-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.planner-upload-row button {
+  padding: 10px 18px;
+  border-radius: 12px;
+  white-space: nowrap;
+}
+
+/* ===============================
+   Exam Preview Items (Dynamic Content)
+   =============================== */
+.exam-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 18px;
+  border: 1px solid var(--border-accent);
+  border-radius: 16px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.exam-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  opacity: 0.4;
+}
+
+.exam-item:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-focus);
+}
+
+.exam-item:hover::before {
+  opacity: 0.8;
+}
+
+.exam-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.exam-info strong {
+  font-size: 1rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.exam-date {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.exam-remove-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0;
+  margin-left: 12px;
+  flex-shrink: 0;
+}
+
+.exam-remove-btn:hover {
+  background: rgba(220, 38, 38, 0.15);
+  transform: scale(1.1);
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.exam-remove-btn:active {
+  transform: scale(0.95);
+}
+.planner-preview-card,
+.plan-item {
+  padding: 18px 20px;
+  border: 1px solid var(--border-accent);
+  border-radius: 20px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.planner-preview-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  opacity: 0.4;
+}
+
+.planner-preview-card:hover {
+  box-shadow: var(--shadow-hover);
+  transform: translateY(-2px);
+  border-color: var(--border-focus);
+}
+
+.planner-preview-card:hover::before {
+  opacity: 0.8;
+}
+
+.planner-preview-card {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+}
+
+/* Urgency colors */
+.planner-preview-card.urgency-critical {
+  border-left: 4px solid #ef4444;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), transparent), var(--surface-glass);
+}
+
+.planner-preview-card.urgency-warning {
+  border-left: 4px solid #f59e0b;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), transparent), var(--surface-glass);
+}
+
+.planner-preview-card.urgency-normal {
+  border-left: 4px solid #10b981;
+}
+
+.planner-remove-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: rgba(220, 38, 38, 0.08);
+  color: #dc2626;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  line-height: 1;
+  padding: 0;
+}
+
+.planner-remove-btn:hover {
+  background: rgba(220, 38, 38, 0.15);
+  transform: scale(1.1);
+}
+
+.planner-preview-title,
+.plan-item strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+
+.planner-preview-date,
+.plan-item small {
+  color: var(--text-muted);
+}
+
+/* ===============================
+   Strength Rating
+   =============================== */
+.strength-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px 32px;
+  gap: 14px;
+  align-items: center;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-accent);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 10px;
+  transition: all var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.strength-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  opacity: 0.3;
+}
+
+.strength-row:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--border-focus);
+}
+
+.strength-row:hover::before {
+  opacity: 0.6;
+}
+
+.strength-row label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.strength-row input[type="range"] {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-soft);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.strength-row input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+}
+
+.strength-row input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: var(--shadow-md);
+}
+
+.strength-row input[type="range"]:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.strength-row input[type="range"]:focus::-webkit-slider-thumb {
+  transform: scale(1.2);
+  box-shadow: var(--shadow-md), 0 0 0 3px var(--accent-light);
+}
+
+.strength-row input[type="range"]:focus::-moz-range-thumb {
+  transform: scale(1.2);
+  box-shadow: var(--shadow-md), 0 0 0 3px var(--accent-light);
+}
+
+.strength-value {
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-align: center;
+  color: var(--accent);
+}
+
+/* ===============================
+   Settings Row
+   =============================== */
+.planner-settings-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.planner-setting {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.planner-setting label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ===============================
+   Generate Button
+   =============================== */
+.planner-generate-btn {
+  width: 100%;
+  padding: 18px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+  color: var(--text-inverse);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 12px;
+  letter-spacing: 0.02em;
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.planner-generate-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.6s;
+}
+
+.planner-generate-btn:hover::before {
+  left: 100%;
+}
+
+.planner-generate-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  border-color: var(--accent-dark);
+}
+
+.planner-generate-btn:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ===============================
+   Plan Items
+   =============================== */
+/* ===============================
+   Enhanced Plan Display
+   =============================== */
+.plan-item {
+  position: relative;
+  overflow: hidden;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.plan-item::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--accent), rgba(0, 0, 0, 0.2));
+  border-radius: 2px;
+}
+
+.plan-item-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.plan-item-day {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.plan-hours-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, var(--accent-soft), var(--accent-light));
+  color: var(--accent-dark);
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  border: 1px solid var(--accent);
+}
+
+.plan-item ul {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-soft);
+  line-height: 1.7;
+  position: relative;
+  z-index: 1;
+}
+
+.plan-item ul li {
+  margin-bottom: 6px;
+  padding-left: 8px;
+  position: relative;
+}
+
+.plan-item ul li::before {
+  content: "•";
+  position: absolute;
+  left: -12px;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+/* ===============================
+   Plan Summary
+   =============================== */
+.plan-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.plan-summary-card {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(0, 0, 0, 0.04);
+  text-align: center;
+}
+
+.plan-summary-card span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.plan-summary-card strong {
+  font-size: 1.3rem;
+  margin-bottom: 0;
+}
+
+/* ===============================
+   Empty / Loading States
+   =============================== */
+.plan-empty {
+  padding: 28px 18px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 18px;
+  text-align: center;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.025);
+}
+
+/* ===============================
+   Enhanced Loading States
+   =============================== */
+.planner-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  font-weight: 600;
+  color: var(--text-soft);
+  background: var(--surface-card);
+  border-radius: 16px;
+  border: 1px solid var(--border-accent);
+}
+
+.planner-loading::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-subtle);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: planner-spin 0.8s linear infinite;
+}
+
+@keyframes planner-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===============================
+   Success States & Animations
+   =============================== */
+.exam-item.animated {
+  animation: slideInFromBottom 0.4s ease-out;
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.planner-success {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(34, 197, 94, 0.05));
+  border-color: rgba(34, 197, 94, 0.2);
+  color: #16a34a;
+}
+
+.planner-add-btn:focus-visible,
+.planner-generate-btn:focus-visible,
+.exam-remove-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.planner-add-btn:focus:not(:focus-visible),
+.planner-generate-btn:focus:not(:focus-visible),
+.exam-remove-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+@media (max-width: 640px) {
+  .planner-manual-row {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-upload-row {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-settings-row {
+    grid-template-columns: 1fr;
+  }
+
+  .planner-preview-card,
+  .plan-item-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .strength-row {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-hours-badge {
+    align-self: flex-start;
+  }
+
+  .plan-summary {
+    grid-template-columns: 1fr 1fr;
+  }
+}

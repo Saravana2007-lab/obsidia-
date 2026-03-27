@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="olive">
+<head>
+  <meta charset="UTF-8">
+  <title>Study Guide App - Obsidia Edition</title>
+  <meta name="description" content="Study Guide App with AI companion Obsidia - track subjects, tasks, study sessions, and exam preparation.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="planner.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+</head>
+<body>
+  <div id="cloudStatusIndicator" class="cloud-status" title="Supabase sync status">
+    <span class="cloud-dot offline">o</span>
+    <span class="cloud-label">Local</span>
+  </div>
+  <div id="globalLoader" class="global-loader hidden" aria-hidden="true">
+    <div class="spinner" role="status" aria-hidden="true"></div>
+    <span id="globalLoaderText">Loading...</span>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Primary">
+    <button class="nav-item active" data-screen="home">Home</button>
+    <button class="nav-item" data-screen="subjects">Subjects</button>
+    <button class="nav-item" data-screen="tasks">Tasks</button>
+    <button class="nav-item" data-screen="analytics">Analytics</button>
+    <button class="nav-item" data-screen="tools">Tools</button>
+    <button class="nav-item" data-screen="studyplan">Planner</button>
+  </nav>
+
+  <section id="home" class="screen">
+    <div class="home-hero card">
+      <div class="home-hero-copy">
+        <p class="eyebrow">Study Dashboard</p>
+        <div class="home-header">
+          <h1 class="home-title">Welcome back, Saravana</h1>
+          <div class="streak-badge">
+            <span class="streak-icon">On track</span>
+            <div class="streak-info">
+              <span class="streak-label">Study streak</span>
+              <span id="streakCount" class="streak-count">0</span>
+              <span class="streak-unit">days</span>
+            </div>
+          </div>
+        </div>
+        <p class="home-hero-text">Pick your next task, start a focused session, and keep your plan moving.</p>
+        <div class="home-quick-actions">
+          <button type="button" class="quick-action-btn" onclick="goToScreen('tasks')">Tasks</button>
+          <button type="button" class="quick-action-btn" onclick="goToScreen('subjects')">Subjects</button>
+          <button type="button" class="quick-action-btn" onclick="goToScreen('studyplan')">Planner</button>
+          <button type="button" class="quick-action-btn quick-action-ghost" onclick="cycleTheme()">Theme</button>
+        </div>
+      </div>
+      <div class="home-hero-art">
+        <img src="obsidia-neutral.png" alt="Obsidia">
+        <div class="hero-art-caption">
+          <span class="hero-art-title">Obsidia</span>
+          <span class="hero-art-meta">Guide and study companion</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="home-stats-section">
+      <h2 class="section-title">Today's Progress</h2>
+      <div class="stats-grid">
+        <div class="stat-card stat-card-primary">
+          <div class="stat-icon">Time</div>
+          <div class="stat-content">
+            <span id="todayMinutes" class="stat-value">0</span>
+            <span class="stat-label">Minutes</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card-success">
+          <div class="stat-icon">Done</div>
+          <div class="stat-content">
+            <span id="todayTasks" class="stat-value">0</span>
+            <span class="stat-label">Tasks Done</span>
+          </div>
+        </div>
+        <div class="stat-card stat-card-accent">
+          <div class="stat-icon">XP</div>
+          <div class="stat-content">
+            <span id="todayXP" class="stat-value">0</span>
+            <span class="stat-label">XP Earned</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="timer-section card">
+      <div class="timer-header">
+        <h2 class="section-title">Study Timer</h2>
+        <span id="timerStatus" class="timer-status-badge">Ready</span>
+      </div>
+      <div class="timer-display-wrapper">
+        <div id="timerDisplay" class="timer-display">25:00</div>
+        <select id="timerPreset" class="timer-preset">
+          <option value="25">25 min</option>
+          <option value="50">50 min</option>
+          <option value="15">15 min</option>
+        </select>
+      </div>
+      <div class="timer-controls">
+        <button id="startSessionBtn" class="timer-btn timer-btn-start">Start</button>
+        <button id="stopSessionBtn" class="timer-btn timer-btn-pause">Pause</button>
+        <button id="resetTimerBtn" class="timer-btn timer-btn-reset">Reset</button>
+      </div>
+    </div>
+
+    <div id="nextTaskCard" class="next-task-card card">
+      <div class="card-heading">
+        <h2 class="section-title">Next Task</h2>
+        <span id="nextTaskPill" class="section-pill">Queue empty</span>
+      </div>
+      <div class="next-task-content">
+        <p class="subtle">No tasks yet. Add one to get started.</p>
+      </div>
+    </div>
+
+    <div class="timeline-card card">
+      <h2 class="section-title">Weekly Timeline</h2>
+      <div class="chart-container">
+        <canvas id="homeTimelineChart" height="120"></canvas>
+      </div>
+    </div>
+  </section>
+
+  <section id="subjects" class="screen hidden">
+    <h2>Subjects</h2>
+    <div class="add-box">
+      <input id="newSubjectInput" placeholder="Enter subject name...">
+      <button id="addSubjectBtn">Add Subject</button>
+    </div>
+    <ul id="subjectList"></ul>
+    <div class="panel">
+      <h3 id="selectedSubjectTitle">Select a subject</h3>
+      <div class="add-box">
+        <input id="newTopicInput" placeholder="Enter topic name...">
+        <button id="addTopicBtn">Add Topic</button>
+      </div>
+      <ul id="topicList"></ul>
+    </div>
+    <div class="panel">
+      <h3>Files</h3>
+      <ul id="fileList"></ul>
+      <div id="fileUploadBox" class="hidden add-box">
+        <input type="file" id="fileInput" multiple accept=".pdf,image/*">
+        <button id="addFilesBtn">Upload Files</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="tasks" class="screen hidden">
+    <h2>Tasks</h2>
+    <div class="filter-box">
+      <label>Filter:</label>
+      <select id="taskFilterSelect">
+        <option value="all">All Tasks</option>
+        <option value="overdue">Overdue</option>
+      </select>
+    </div>
+    <ul id="taskList"></ul>
+    <div class="add-box">
+      <h3>Add New Task</h3>
+      <div style="grid-column: 1 / -1;">
+        <label for="taskTitleInput">Task Title *</label>
+        <input id="taskTitleInput" placeholder="Enter task title..." required>
+      </div>
+      <div>
+        <label for="taskEstimateInput">Estimate (minutes)</label>
+        <input id="taskEstimateInput" type="number" placeholder="30" value="30" min="1">
+      </div>
+      <div>
+        <label for="taskSubjectSelect">Subject</label>
+        <select id="taskSubjectSelect">
+          <option value="">Select Subject</option>
+        </select>
+      </div>
+      <div>
+        <label for="taskTopicSelect">Topic</label>
+        <select id="taskTopicSelect">
+          <option value="">Select Topic</option>
+        </select>
+      </div>
+      <div>
+        <label for="taskDeadlineInput">Deadline</label>
+        <input id="taskDeadlineInput" type="date">
+      </div>
+      <div>
+        <label for="taskPrioritySelect">Priority</label>
+        <select id="taskPrioritySelect">
+          <option value="1">Low (1)</option>
+          <option value="2">Low-Medium (2)</option>
+          <option value="3" selected>Normal (3)</option>
+          <option value="4">High (4)</option>
+          <option value="5">Urgent (5)</option>
+        </select>
+      </div>
+      <div>
+        <label for="taskDifficultySelect">Difficulty</label>
+        <select id="taskDifficultySelect">
+          <option value="1">Easy (1)</option>
+          <option value="2">Easy-Medium (2)</option>
+          <option value="3" selected>Medium (3)</option>
+          <option value="4">Hard (4)</option>
+          <option value="5">Very Hard (5)</option>
+        </select>
+      </div>
+      <button id="addTaskBtn" type="button">Add Task</button>
+    </div>
+  </section>
+
+  <section id="dashboard" class="screen hidden">
+    <h2>Dashboard</h2>
+    <h3>Subject Progress</h3>
+    <ul id="subjectStatsList"></ul>
+    <div class="card">
+      <h3>Daily Timeline (Last 7 Days)</h3>
+      <canvas id="timelineChart"></canvas>
+      <small id="goalStatusText" style="display:block; margin-top:6px; color:var(--text-muted)"></small>
+    </div>
+    <div class="card">
+      <h3>Subject-wise Timelines</h3>
+      <div id="subjectTimelineContainer"></div>
+    </div>
+    <h3>Quests</h3>
+    <ul id="questList"></ul>
+    <h3>Exams</h3>
+    <div class="add-box">
+      <input id="examTitleInput" placeholder="Exam title...">
+      <input id="examDateInput" type="date">
+      <select id="examSubjectSelect">
+        <option value="">Select Subject</option>
+      </select>
+      <button id="addExamBtn">Add Exam</button>
+    </div>
+    <ul id="examList"></ul>
+  </section>
+
+  <section id="analytics" class="screen hidden">
+    <div class="analytics-header">
+      <h1 class="analytics-title">Analytics Dashboard</h1>
+      <p class="analytics-subtitle">Track your study progress and performance</p>
+    </div>
+    <div class="analytics-stats-grid">
+      <div class="analytics-stat-card analytics-stat-primary">
+        <div class="analytics-stat-icon">Time</div>
+        <div class="analytics-stat-content">
+          <div class="stat-value" id="totalMinutesAnal">0</div>
+          <div class="stat-label">Total Minutes</div>
+        </div>
+      </div>
+      <div class="analytics-stat-card analytics-stat-success">
+        <div class="analytics-stat-icon">Sessions</div>
+        <div class="analytics-stat-content">
+          <div class="stat-value" id="totalSessionsAnal">0</div>
+          <div class="stat-label">Sessions</div>
+        </div>
+      </div>
+      <div class="analytics-stat-card analytics-stat-accent">
+        <div class="analytics-stat-icon">XP</div>
+        <div class="analytics-stat-content">
+          <div class="stat-value" id="totalXPAnal">0</div>
+          <div class="stat-label">Total XP</div>
+        </div>
+      </div>
+      <div class="analytics-stat-card analytics-stat-fire">
+        <div class="analytics-stat-icon">Streak</div>
+        <div class="analytics-stat-content">
+          <div class="stat-value" id="currentStreakAnal">0</div>
+          <div class="stat-label">Day Streak</div>
+        </div>
+      </div>
+    </div>
+    <div class="analytics-charts-grid">
+      <div class="analytics-chart-card">
+        <div class="chart-header">
+          <h3 class="chart-title">Study Intensity</h3>
+          <span class="chart-subtitle">Last 30 Days</span>
+        </div>
+        <div class="chart-container">
+          <canvas id="heatmapAnalytics"></canvas>
+        </div>
+      </div>
+      <div class="analytics-chart-card analytics-chart-wide">
+        <div class="chart-header">
+          <h3 class="chart-title">Subject Distribution</h3>
+          <span class="chart-subtitle">Time Allocation</span>
+        </div>
+        <div class="chart-container chart-container-bar">
+          <canvas id="radarAnalytics"></canvas>
+          <div id="radarEmptyState" class="chart-empty-state hidden">
+            <p>No study sessions recorded yet</p>
+            <small>Start studying to see your distribution</small>
+          </div>
+        </div>
+      </div>
+      <div class="analytics-chart-card analytics-chart-wide">
+        <div class="chart-header">
+          <h3 class="chart-title">Progress Over Time</h3>
+          <span class="chart-subtitle">Cumulative XP Growth</span>
+        </div>
+        <div class="chart-container chart-container-progress">
+          <canvas id="progressAnalytics"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="analytics-performance-card">
+      <div class="chart-header">
+        <h3 class="chart-title">Subject Performance</h3>
+        <span class="chart-subtitle">Detailed breakdown</span>
+      </div>
+      <div id="subjectPerfList" class="performance-list"></div>
+    </div>
+  </section>
+
+  <section id="tools" class="screen hidden">
+    <div class="tools-wrapper">
+      <aside class="tools-sidebar">
+        <h2>Tools</h2>
+        <nav class="tools-menu">
+          <button class="tool-btn active" onclick="switchTool(event, 'music')">Music</button>
+          <button class="tool-btn" onclick="switchTool(event, 'calculator')">Calculator</button>
+          <button class="tool-btn" onclick="switchTool(event, 'dictionary')">Dictionary</button>
+          <button class="tool-btn" onclick="switchTool(event, 'notes')">Notes</button>
+          <button class="tool-btn" onclick="switchTool(event, 'goals')">Goals</button>
+          <button class="tool-btn" onclick="switchTool(event, 'focus')">Focus</button>
+          <button class="tool-btn" onclick="switchTool(event, 'brain')">Break</button>
+        </nav>
+      </aside>
+      <main class="tools-content">
+        <div class="tool-panel show" id="tool-music">
+          <h3>Music Player</h3>
+          <p>Connect Spotify for focused study sessions</p>
+          <div id="musicControlsPanel" class="music-controls">
+            <input type="text" id="spotifyPlaylistInput" placeholder="Paste Spotify Playlist URL or ID">
+            <button id="loadPlaylistBtn" class="btn-primary">Load Playlist</button>
+          </div>
+          <div id="spotifyEmbed" class="music-player" aria-hidden="true"></div>
+          <div class="tool-tip">Paste your Spotify playlist link or ID.</div>
+        </div>
+        <div class="tool-panel" id="tool-calculator">
+          <h3>Calculator</h3>
+          <p>Quick math calculations</p>
+          <input id="calcInput" type="text" placeholder="Enter: 2 + 2" class="tool-input">
+          <button onclick="calculateExpression()" class="btn-primary">Calculate</button>
+          <div class="calc-result" id="calcOutput"></div>
+          <div class="tool-tip">Supports +, -, *, /, %, **.</div>
+        </div>
+        <div class="tool-panel" id="tool-dictionary">
+          <h3>Dictionary</h3>
+          <p>Look up word definitions</p>
+          <input id="dictInput" type="text" placeholder="Enter any word..." class="tool-input">
+          <button onclick="searchDictionary()" class="btn-primary">Search</button>
+          <div class="dict-result" id="dictOutput"></div>
+          <div class="tool-tip">Powered by a free dictionary API.</div>
+        </div>
+        <div class="tool-panel" id="tool-notes">
+          <h3>Quick Notes</h3>
+          <p>Write quick study notes</p>
+          <textarea id="quickNotes" placeholder="Type your notes here..." class="tool-textarea"></textarea>
+          <button onclick="saveQuickNotes()" class="btn-primary">Save Notes</button>
+          <div class="tool-tip">Saved locally on your device.</div>
+        </div>
+        <div class="tool-panel" id="tool-goals">
+          <h3>Daily Goals</h3>
+          <p>Set and track your goals</p>
+          <div class="goal-input-row">
+            <input id="goalInput" type="text" placeholder="E.g., Complete 3 topics" class="tool-input">
+            <button onclick="addStudyGoal()" class="btn-primary">Add</button>
+          </div>
+          <ul id="goalsList" class="goals-list"></ul>
+          <div class="tool-tip">Check off goals as you complete them.</div>
+        </div>
+        <div class="tool-panel" id="tool-focus">
+          <h3>Focus Mode</h3>
+          <p>Minimize distractions</p>
+          <button onclick="toggleFocusMode()" class="btn-primary focus-btn">Enter Focus Mode</button>
+          <p id="focusModeStatus" class="status-msg">Off</p>
+          <div class="tool-tip">Dims navigation and the guide UI.</div>
+        </div>
+        <div class="tool-panel" id="tool-brain">
+          <h3>Brain Break</h3>
+          <p>Quick refresh exercises</p>
+          <button onclick="suggestBrainBreak()" class="btn-primary brain-btn">Get Suggestion</button>
+          <p id="brainBreakSuggestion" class="brain-result"></p>
+          <div class="tool-tip">Take a short break every 30 minutes.</div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <div class="guide-avatar">
+    <img src="obsidia-neutral.png" alt="Obsidia Avatar" id="guideAvatarImg" title="Ask Obsidia">
+  </div>
+
+  <div id="guideBubble" class="bubble hidden">
+    <p id="guideMessage"></p>
+  </div>
+
+  <div class="guide-control-bar">
+    <form id="guideForm">
+      <input id="guideCommandInput" placeholder="Ask Obsidia anything... (Ctrl+Space for voice)" autocomplete="off">
+      <div class="guide-btn-group">
+        <button type="submit" id="guideSendBtn" class="send-btn" title="Send (Enter)">Send</button>
+        <button type="button" id="guideMicBtn" class="action-btn mic-btn" title="Voice Input (Ctrl+Space)">Mic</button>
+        <button type="button" id="guideUploadBtn" class="action-btn upload-btn" title="Upload PDF">PDF</button>
+        <input type="file" id="guidePdfInput" accept=".pdf" style="display: none;">
+      </div>
+    </form>
+  </div>
+
+  <div id="youtubePlayerWrap" class="modal hidden">
+    <div class="modal-content">
+      <button id="ytCloseBtn" class="close">Close</button>
+      <iframe id="youtubePlayer" allowfullscreen allow="autoplay"></iframe>
+    </div>
+  </div>
+
+  <div id="pdfModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close">Close</button>
+      <h3 id="pdfTitle">PDF Document</h3>
+      <p>Page <span id="currentPage">1</span> / <span id="totalPages">1</span></p>
+      <div class="pdf-controls">
+        <button id="pdfPrevBtn">Prev</button>
+        <button id="pdfNextBtn">Next</button>
+      </div>
+      <div id="pdfViewer"></div>
+      <button id="pdfSummarizeBtn">Summarize Page</button>
+      <div id="pdfSummaryBox" class="hidden"></div>
+    </div>
+  </div>
+
+  <div id="imageModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close">Close</button>
+      <h3 id="imageTitle">Image</h3>
+      <img id="imageViewer" alt="Document image">
+    </div>
+  </div>
+
+  <div id="sessionModal" class="modal hidden">
+    <form id="sessionModalForm" class="modal-content">
+      <h3>Rate Your Session</h3>
+      <p id="sessionModalSummary"></p>
+      <label>Duration (minutes):</label>
+      <input id="sessionDurationInput" type="number" value="25" min="1">
+      <label>Task:</label>
+      <select id="sessionTaskSelect">
+        <option value="">Free study</option>
+      </select>
+      <label>Focus (1-5):</label>
+      <input id="sessionFocusInput" type="range" min="1" max="5" value="3">
+      <span id="focusValue">3</span>
+      <label>Difficulty (1-5):</label>
+      <input id="sessionDifficultyInput" type="range" min="1" max="5" value="3">
+      <span id="difficultyValue">3</span>
+      <label>Notes:</label>
+      <textarea id="sessionNoteInput" rows="3" placeholder="What did you study?"></textarea>
+      <div class="button-row">
+        <button type="submit">Save Session</button>
+        <button id="sessionSkipBtn" type="button">Skip</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="flowModal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close">Close</button>
+      <h3 id="flowTitle">Subject Flow</h3>
+      <div id="flowContainer"></div>
+    </div>
+  </div>
+
+  <section id="studyplan" class="screen hidden">
+    <div class="planner-hero card">
+      <div>
+        <p class="eyebrow">Adaptive Revision Planner</p>
+        <h2>AI Exam Planner</h2>
+        <p class="planner-hero-text">Add your exams manually or upload a timetable PDF, rate your strength per subject, and get a day-by-day revision schedule.</p>
+      </div>
+      <div class="planner-hero-stats">
+        <div class="planner-stat">
+          <span class="planner-stat-label">Mode</span>
+          <strong>Exam prep</strong>
+        </div>
+        <div class="planner-stat">
+          <span class="planner-stat-label">Output</span>
+          <strong>Daily blocks</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card planner-card">
+      <h3>Add Exams</h3>
+      <div class="planner-manual-entry">
+        <div class="planner-manual-row">
+          <div class="planner-manual-field">
+            <label for="manualExamName">Subject / Exam Name</label>
+            <input type="text" id="manualExamName" placeholder="e.g. Data Structures, Mathematics...">
+          </div>
+          <div class="planner-manual-field">
+            <label for="manualExamDate">Exam Date</label>
+            <input type="text" id="manualExamDate" placeholder="dd-mm-yyyy">
+          </div>
+          <button id="addManualExamBtn" class="planner-add-btn">+ Add Exam</button>
+        </div>
+      </div>
+      
+      <div class="planner-divider">
+        <span>or upload a timetable</span>
+      </div>
+
+      <div class="planner-upload-row">
+        <input type="file" id="plannerPdfInput" accept=".pdf,image/*">
+        <button id="analyzeExamBtn">Analyze Timetable</button>
+      </div>
+
+      <div id="examSubjectsPreview"></div>
+    </div>
+
+    <div class="card planner-card">
+      <h3>Self Assessment</h3>
+      <div id="subjectStrengthContainer"></div>
+      <div class="planner-settings-row">
+        <div class="planner-setting">
+          <label for="dailyHoursInput">Hours available per day:</label>
+          <input type="number" id="dailyHoursInput" min="1" max="12" value="4">
+        </div>
+        <div class="planner-setting">
+          <label for="preferredTimeSelect">Preferred Study Time:</label>
+          <select id="preferredTimeSelect">
+            <option value="morning">Morning</option>
+            <option value="afternoon">Afternoon</option>
+            <option value="night">Night</option>
+          </select>
+        </div>
+      </div>
+      <button id="generateSmartPlanBtn" class="planner-generate-btn">Generate Smart Plan</button>
+    </div>
+
+    <div class="card planner-card">
+      <div class="card-heading">
+        <h3>Generated Study Plan</h3>
+        <span id="plannerSummaryBadge" class="section-pill">No plan yet</span>
+      </div>
+      <div id="generatedPlanOutput"></div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast"></div>
+  <canvas id="confettiCanvas"></canvas>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="module" src="app.js"></script>
+  <script src="planner.js"></script>
+</body>
+</html>
